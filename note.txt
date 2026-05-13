@@ -1,0 +1,13 @@
+1. Resolve DNS
+2. Créer raw socket + setuid/permissions
+3. Signal SIGINT handler
+4. Boucle :
+   a. Construire paquet ICMP (checksum inclus)
+   b. Timestamp avant envoi
+   c. sendto()
+   d. recvfrom()
+   e. Timestamp après réception → calcul RTT
+   f. Vérifier réponse (type, id, checksum)
+   g. Afficher résultat
+   h. sleep(1)
+5. À CTRL+C → afficher stats
