@@ -2,7 +2,7 @@ NAME = ft_ping
 
 CC = cc -Wall -Werror -Wextra -Iincludes/
 
-SRCS = main.c
+SRCS = main.c resolve_dns.c
 
 OBJ_DIR = obj
 OBJ = $(SRCS:%.c=$(OBJ_DIR)/%.o)
