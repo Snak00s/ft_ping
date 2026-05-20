@@ -15,25 +15,19 @@ int	parse_ip(char *addr)
 	return (1);
 }
 
-int resolve_dns(struct sockaddr_in *host_addr, char *domain_name, dnsinfo *host)
+int resolve_dns(struct sockaddr_in *host_addr, char *domain_name, dnsinfo *host, struct addrinfo *hints)
 {
 	struct addrinfo *result;
-	struct addrinfo hints = {
-		.ai_family = AF_INET,
-		.ai_socktype = SOCK_RAW
-	};
 
-	int gai_rc = getaddrinfo(domain_name, NULL, &hints, &result);
+	int gai_rc = getaddrinfo(domain_name, NULL, hints, &result);
 	switch (gai_rc) {
 		case 0:
 			break;
 		case EAI_SYSTEM:
-			fprintf(stderr, "Failed to resolve server address '%s': system error %s\n",
-				domain_name, strerror(errno));
+			fprintf(stderr, "ft_ping: %s: system error %s\n", domain_name, strerror(errno));
 			return (0);
 		default:
-			fprintf(stderr, "Failed to resolve server address '%s': %s\n",
-				domain_name, gai_strerror(gai_rc));
+			fprintf(stderr, "ft_ping: %s: %s\n", domain_name, gai_strerror(gai_rc));
 			return (0);
 	}
 
@@ -44,29 +38,32 @@ int resolve_dns(struct sockaddr_in *host_addr, char *domain_name, dnsinfo *host)
 		char addr[1025];
 		int gni_rc = getnameinfo(ai->ai_addr, ai->ai_addrlen, addr, sizeof(addr), NULL, 0, NI_NUMERICHOST);
 		if (gni_rc != 0) {
-			fprintf(stderr, "Failed to format address: %s\n", gai_strerror(gni_rc));
+			fprintf(stderr, "ft_ping: %s\n", gai_strerror(gni_rc));
 			continue;
 		}
-		gni_rc = getnameinfo(ai->ai_addr, ai->ai_addrlen,
-			name, sizeof(name), NULL, 0, 0);
+		gni_rc = getnameinfo(ai->ai_addr, ai->ai_addrlen, name, sizeof(name), NULL, 0, 0);
 		switch (gni_rc) {
 			case 0:
 				break;
 			case EAI_SYSTEM:
-				fprintf(stderr, "Reverse DNS lookup for %s: system error %s\n",
-					addr, strerror(errno));
+				fprintf(stderr, "ft_ping: %s: system error %s\n", addr, strerror(errno));
 				break;
 			default:
-				fprintf(stderr, "Reverse DNS lookup failed for %s: %s\n",
-					addr, gai_strerror(gni_rc));
+				fprintf(stderr, "ft_ping: %s: %s\n", addr, gai_strerror(gni_rc));
 		}
 
 		if (parse_ip(addr))
 		{
 			ft_strlcpy(host->host_addr, addr, ft_strlen(addr) + 1);
+			free(host->domain_name);
+			free(host->cannon_name);
 			host->domain_name = ft_strdup(name);
 			if (!host->domain_name)
 				return (0);
+			host->cannon_name = ft_strdup(ai->ai_canonname);
+			if (!host->cannon_name)
+				return (0);
+			host_addr->sin_family = ai->ai_family;
 			break;
 		}
 		ai = ai->ai_next;
@@ -75,8 +72,8 @@ int resolve_dns(struct sockaddr_in *host_addr, char *domain_name, dnsinfo *host)
 
 	if (!host->domain_name)
 		return (0);
-	host_addr->sin_family = AF_INET;
 	host_addr->sin_port = htons(80);
-	inet_pton(AF_INET, host->host_addr, &host_addr->sin_addr);
+	inet_pton(host_addr->sin_family, host->host_addr, &host_addr->sin_addr);
+
 	return (1);
 }

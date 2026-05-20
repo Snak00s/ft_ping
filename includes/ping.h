@@ -18,7 +18,7 @@
 # include <errno.h>
 # include "../libft/libft.h"
 
-typedef struct packetvalue {
+typedef struct	packetvalue {
 	float			ptime_min;
 	float			ptime_avg;
 	float			ptime_max;
@@ -29,17 +29,30 @@ typedef struct packetvalue {
 	unsigned int	pack_total;
 } packetvalue;
 
-typedef struct dnsinfo {
+extern int g_sig;
+
+typedef struct	dnsinfo {
 	char	host_addr[20];
+	char	*cannon_name;
 	char	*domain_name;
 } dnsinfo;
 
-typedef struct packet {
-	struct	icmphdr	icmp;
-	struct	iphdr	ip;
+typedef struct	icmp_packet {
+	struct icmphdr	icmp;
 	char			garbage[56];
-} packet;
+} icmp_packet;
 
-int resolve_dns(struct sockaddr_in *host_addr, char *domain_name, dnsinfo *host);
+typedef struct	ping_flags {
+	int	v_flag;
+	int	qm_flag;
+} ping_flags;
+
+int	resolve_dns(struct sockaddr_in *host_addr, char *domain_name, dnsinfo *host, struct addrinfo *hints);
+
+int	ping_loop(int sockfd, char *arg, struct sockaddr_in *host_addr, packetvalue *progval, dnsinfo *host, ping_flags *flags);
+
+char *sock_name(int sock_type);
+
+char *af_name(sa_family_t ai_family);
 
 #endif
