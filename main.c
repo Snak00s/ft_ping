@@ -1,11 +1,18 @@
 #include"ping.h"
 
 int	g_sig = 0;
+int g_alrm = 1;
 
 void	handler(int sig)
 {
 	(void)sig;
 	g_sig = 1;
+}
+
+void	alarm_handler(int sig)
+{
+	(void)sig;
+	g_alrm = 1;
 }
 
 void	signal_handler(void)
@@ -14,6 +21,11 @@ void	signal_handler(void)
 	ft_memset(&sa, 0, sizeof(struct sigaction));
 	sa.sa_handler = &handler;
 	sigaction(SIGINT, &sa, 0);
+
+	struct sigaction	alrm_sa;
+	ft_memset(&alrm_sa, 0, sizeof(struct sigaction));
+	alrm_sa.sa_handler = &alarm_handler;
+	sigaction(SIGALRM, &alrm_sa, 0);
 }
 
 void	print_result(packetvalue *progval, char *hostname)
@@ -33,12 +45,12 @@ int	parse_args(char **strtab, size_t tabsize, ping_flags *flags)
 		{
 			switch (*(strtab[i] + 1))
 			{
-			case 'v': flags->v_flag = 1;
-				break;
-			case '?': flags->qm_flag = 1;
-				break;
-			default: return (*(strtab[i] + 1));
-				break;
+				case 'v': flags->v_flag = 1;
+					break;
+				case '?': flags->qm_flag = 1;
+					break;
+				default: return (*(strtab[i] + 1));
+					break;
 			}
 		}
 	}
@@ -66,61 +78,81 @@ Options:\n\
 
 int main(int argc, char **argv)
 {
-	signal_handler();
-
 	ping_flags			flags;
-	memset(&flags, 0, sizeof(flags));
-
-	if (parse_args(argv, argc, &flags))
-		return (1);
-
-	if (flags.qm_flag)
-	{
-		printf("%s\n", help());
-		return (1);
-	}
-
 	packetvalue			progval;
-	dnsinfo				host;
-	struct sockaddr_in	hostaddr;
+	dnsinfo				host, l_host;
+	struct sockaddr_in	hostaddr, l_hostaddr;
 	struct addrinfo		hints = {
 		.ai_family = AF_UNSPEC,
 		.ai_socktype = SOCK_RAW,
 		.ai_flags = AI_CANONNAME
 	};
-	memset(&progval, 0, sizeof(progval));
-	memset(&host, 0, sizeof(host));
-	memset(&hostaddr, 0, sizeof(hostaddr));
+	ft_memset(&flags, 0, sizeof(flags));
+	ft_memset(&progval, 0, sizeof(progval));
+	ft_memset(&host, 0, sizeof(host));
+	ft_memset(&l_host, 0, sizeof(l_host));
+	ft_memset(&l_hostaddr, 0, sizeof(l_hostaddr));
+	ft_memset(&hostaddr, 0, sizeof(hostaddr));
 
-	for (int i = 0; i < argc; i++)
+	int ret = parse_args(argv, argc, &flags);
+	if (ret != 0)
+		return (fprintf(stderr, "ft_ping: invalid option -- \'%c\'\n\n%s", (char)ret, help()), 1);
+	if (flags.qm_flag)
+		return (printf("%s\n", help()), 1);
+
+	int last_dom = 0;
+	int	fisrt_dom = 0;
+	for (int i = 1; i < argc; i++)
 	{
 		if (*argv[i] != '-')
 		{
-			if (!resolve_dns(&hostaddr, argv[1], &host, &hints))
-				return (1);
+			if (!fisrt_dom)
+			{
+				if (!resolve_dns(argv[i], &hostaddr, &host, &hints))
+					return (1);
+				fisrt_dom = i;
+			}
+			else
+			{
+				if (!resolve_dns(argv[i], &l_hostaddr, &l_host, &hints))
+				{
+					free_dnsinfo(&host);
+					free_dnsinfo(&l_host);
+					return (1);
+				}
+			}
+			last_dom = i;
 		}
+	}
+	if (fisrt_dom == last_dom)
+	{
+		l_hostaddr = hostaddr;
+		l_host.cannon_name = ft_strdup(host.cannon_name);
+		l_host.domain_name = ft_strdup(host.domain_name);
+		ft_strlcpy(l_host.host_addr, host.host_addr, ft_strlen(host.host_addr) + 1);
 	}
 
 	int sockfd = socket(hostaddr.sin_family, SOCK_RAW, IPPROTO_ICMP);
 	if (sockfd == -1)
-	{
-		fprintf(stderr, "ft_ping: %s\n", strerror(errno));
-		return (1);
-	}
+		return (fprintf(stderr, "ft_ping: %s\n", strerror(errno)), 1);
 
 	if (flags.v_flag)
 		printf("ping: sock4.fd: %d (socktype: %s), hints.ai_family: %s\n\nai->ai_family: %s, ai->ai_canonname: \'%s\'\n",
-			sockfd, sock_name(SOCK_RAW), af_name(hints.ai_family), af_name(hostaddr.sin_family), host.cannon_name);
+			sockfd, sock_name(SOCK_RAW), af_name(hints.ai_family), af_name(l_hostaddr.sin_family), l_host.cannon_name);
 
-	if (!ping_loop(sockfd, argv[1], &hostaddr, &progval, &host, &flags))
+	signal_handler();
+	if (!ping_loop(sockfd, argv[last_dom], &hostaddr, &progval, &host, &l_host, &flags))
 	{
+		free_dnsinfo(&host);
+		free_dnsinfo(&l_host);
 		close(sockfd);
 		printf("not good\n");
 		return (1);
 	}
-	print_result(&progval, argv[1]);
-	free(host.domain_name);
-	free(host.cannon_name);
+	print_result(&progval, argv[last_dom]);
+
+	free_dnsinfo(&host);
+	free_dnsinfo(&l_host);
 	close(sockfd);
 	return (0);
 }

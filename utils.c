@@ -190,3 +190,11 @@ char *sock_name(int sock_type)
 		break;
 	}
 }
+
+void	free_dnsinfo(dnsinfo *dns)
+{
+	free(dns->cannon_name);
+	dns->cannon_name = NULL;
+	free(dns->domain_name);
+	dns->domain_name = NULL;
+}
