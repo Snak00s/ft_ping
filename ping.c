@@ -32,18 +32,21 @@ static void	fill_packethdr(icmp_packet *pack)
 
 int ping_loop(int sockfd, char *arg, struct sockaddr_in *host_addr, packetvalue *progval, dnsinfo *host, dnsinfo *l_host, ping_flags *flags)
 {
-	struct timeval	packet_start, packet_end;
+	struct timeval	packet_start, packet_end, ping_start, ping_end;
 	int				seq = 0;
 	int addr_diff = ft_strncmp(l_host->host_addr, host->host_addr, 21);
 	char buff[1024];
 	icmp_packet	pack;
 	fill_packethdr(&pack);
+	int first = 0;
 
 	printf("PING %s (%s) %d(%d) bytes of data.\n", arg, l_host->host_addr, (int)(sizeof(pack.garbage)), (int)(sizeof(pack) + sizeof(struct iphdr)));
 	while (g_sig == 0)
 	{
 		if (g_alrm)
 		{
+			if (!first++)
+				gettimeofday(&ping_start, NULL);
 			pack.icmp.un.echo.sequence = seq++;
 			pack.icmp.checksum = 0;
 			pack.icmp.checksum = checksum(&pack, sizeof(pack));
@@ -65,7 +68,7 @@ int ping_loop(int sockfd, char *arg, struct sockaddr_in *host_addr, packetvalue 
 			struct icmphdr	*replyIcmp = (struct icmphdr *)(buff + sizeof(struct iphdr));
 			if (replyIcmp->type != 0)
 				progval->pack_lost++;
-			float packet_time = (packet_end.tv_sec - packet_start.tv_sec) + ((packet_end.tv_usec - packet_start.tv_usec) / 1000.0);
+			float packet_time = (packet_end.tv_sec - packet_start.tv_sec) * 1000 + ((packet_end.tv_usec - packet_start.tv_usec) / 1000.0);
 			if (flags->v_flag)
 				printf("%d bytes from %s (%s): icmp_seq=%d ident=%d ttl=%d time=%.2f ms", (int)sto, host->domain_name, host->host_addr, seq, pack.icmp.un.echo.id, replyIp->ttl, packet_time);
 			else
@@ -76,9 +79,11 @@ int ping_loop(int sockfd, char *arg, struct sockaddr_in *host_addr, packetvalue 
 			progval->ptime_min = (packet_time < progval->ptime_max || progval->ptime_min == 0) ? packet_time : progval->ptime_min;
 			alarm(1);
 			g_alrm = 0;
+			gettimeofday(&ping_end, NULL);
 		}
 	}
 	progval->pack_total = seq;
 	progval->ptime_avg = progval->ptime_total / seq;
+	progval->total_time = (ping_end.tv_sec - ping_start.tv_sec) * 1000 + ((ping_end.tv_usec - ping_start.tv_usec) / 1000.0);
 	return (1);
 }
