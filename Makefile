@@ -22,7 +22,7 @@ $(LIBFT) :
 	@make -sC $(LIBFT_DIR) bonus
 
 $(NAME): $(OBJ) $(LIBFT)
-	$(CC) -o $(NAME) $(OBJ) $(LIBFT)
+	$(CC) -o $(NAME) $(OBJ) $(LIBFT) -lm
 
 clean:
 	@make -sC $(LIBFT_DIR) clean

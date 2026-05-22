@@ -198,3 +198,18 @@ void	free_dnsinfo(dnsinfo *dns)
 	free(dns->domain_name);
 	dns->domain_name = NULL;
 }
+
+int	parse_ip(char *addr)
+{
+	if (ft_strlen(addr) > 16)
+		return (0);
+	
+	int i = 0;
+	while (addr[i])
+	{
+		if (!isdigit(addr[i]) && addr[i] != '.')
+			return (0);
+		i++;
+	}
+	return (1);
+}

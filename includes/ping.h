@@ -1,6 +1,7 @@
 #ifndef PING_H
 # define PING_H
 
+# include <math.h>
 # include <stdio.h>
 # include <stdlib.h>
 # include <sys/types.h>
@@ -30,6 +31,7 @@ typedef struct	packetvalue {
 	float			ptime_mdev;
 	float			total_time;
 	float			ptime_total;
+	float			ptime_total_2;
 	unsigned int	pack_lost;
 	unsigned int	pack_total;
 } packetvalue;
@@ -48,6 +50,7 @@ typedef struct	icmp_packet {
 typedef struct	ping_flags {
 	int	v_flag;
 	int	qm_flag;
+	int n_flag;
 } ping_flags;
 
 //-----------------------------------------------------------
@@ -57,5 +60,6 @@ int		ping_loop(int sockfd, char *arg, struct sockaddr_in *host_addr, packetvalue
 char	*sock_name(int sock_type);
 char	*af_name(sa_family_t ai_family);
 void	free_dnsinfo(dnsinfo *dns);
+int		parse_ip(char *addr);
 
 #endif

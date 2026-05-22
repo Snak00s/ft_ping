@@ -1,20 +1,5 @@
 #include"ping.h"
 
-int	parse_ip(char *addr)
-{
-	if (ft_strlen(addr) > 16)
-		return (0);
-	
-	int i = 0;
-	while (addr[i])
-	{
-		if (!isdigit(addr[i]) && addr[i] != '.')
-			return (0);
-		i++;
-	}
-	return (1);
-}
-
 int resolve_dns(char *domain_name, struct sockaddr_in *hostaddr, dnsinfo *host, struct addrinfo *hints)
 {
 	struct addrinfo *result;
