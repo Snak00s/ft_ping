@@ -101,6 +101,7 @@ int	parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flag
 					case 'c': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, progval, &skip_arg, nbr_packet_check);
 						break;
 					case 'W': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, progval, &skip_arg, nbr_packet_check);
+						break;
 					case '\0' : return (-1);
 						break;
 					default: return (*(strtab[i] + idx));

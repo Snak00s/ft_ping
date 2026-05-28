@@ -31,12 +31,12 @@ void	signal_handler(void)
 int	print_result(packetvalue *progval, char *hostname)
 {
 	int rec_packet = progval->pack_total - progval->pack_lost;
-	int loss_packet = (progval->pack_lost / progval->pack_total) * 100;
-	printf("\n--- %s ping statistics ---\n%d packets transmitted, %d received, %d%% icmp_packet loss, time %dms\n",
-			hostname, progval->pack_total, rec_packet, loss_packet, (int)progval->total_time);
-	if (loss_packet != 100)
-		printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n", progval->ptime_min, progval->ptime_avg, progval->ptime_max, progval->ptime_mdev);
-	return (loss_packet == 100);
+	int percent_loss = (progval->pack_lost * 100) / progval->pack_total;
+	printf("--- %s ping statistics ---\n%d packets transmitted, %d packets received, %d%% packet loss\n",
+			hostname, progval->pack_total, rec_packet, percent_loss);
+	if (percent_loss != 100)
+		printf("round-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n", progval->ptime_min, progval->ptime_avg, progval->ptime_max, progval->ptime_mdev);
+	return (percent_loss == 100);
 }
 
 char	*help()
@@ -103,9 +103,9 @@ int main(int argc, char **argv)
 		close(sockfd);
 	}
 
-	if (flags.v_flag)
-		printf("ft_ping: sock4.fd: %d (socktype: %s), hints.ai_family: %s\n\nai->ai_family: %s, ai->ai_canonname: \'%s\'\n",
-			sockfd, sock_name(SOCK_RAW), af_name(hints.ai_family), af_name(hostaddr.sin_family), host.cannon_name);
+	// if (flags.v_flag)
+	// 	printf("ft_ping: sock4.fd: %d (socktype: %s), hints.ai_family: %s\n\nai->ai_family: %s, ai->ai_canonname: \'%s\'\n",
+	// 		sockfd, sock_name(SOCK_RAW), af_name(hints.ai_family), af_name(hostaddr.sin_family), host.cannon_name);
 
 	signal_handler();
 	if (!ping_loop(sockfd, argv[dst], &hostaddr, &progval, &host, &flags))

@@ -37,7 +37,6 @@ int ping_loop(int sockfd, char *arg, struct sockaddr_in *host_addr, packetvalue 
 {
 	struct timeval	packet_start, packet_end, ping_start, ping_end;
 	uint16_t		seq = 0;
-	int				is_addr = parse_ip(arg);
 	char			buff[1024];
 	icmp_packet		*pack = fill_packethdr(progval->payload_size);
 	if (!pack)
@@ -45,7 +44,11 @@ int ping_loop(int sockfd, char *arg, struct sockaddr_in *host_addr, packetvalue 
 
 	int pack_size = progval->payload_size + (int)(sizeof(struct icmphdr));
 
-	printf("PING %s (%s) %ld(%ld) bytes of data.\n", arg, host->host_addr, progval->payload_size, progval->payload_size + sizeof(icmp_packet) + sizeof(struct iphdr));
+	if (flags->v_flag)
+		printf("PING %s (%s): %ld data bytes, id 0x%x = %d\n", arg, host->host_addr, progval->payload_size, pack->icmp.un.echo.id, pack->icmp.un.echo.id);
+	else
+		printf("PING %s (%s): %ld data bytes\n", arg, host->host_addr, progval->payload_size);
+
 	unsigned long long nbr_packet = 0;
 	while (g_sig == 0 && (progval->nbr_max_packet == 0 || nbr_packet < progval->nbr_max_packet))
 	{
@@ -55,7 +58,7 @@ int ping_loop(int sockfd, char *arg, struct sockaddr_in *host_addr, packetvalue 
 			if (!nbr_packet)
 				gettimeofday(&ping_start, NULL);
 			nbr_packet++;
-			pack->icmp.un.echo.sequence = seq++;
+			pack->icmp.un.echo.sequence = seq;
 			pack->icmp.checksum = 0;
 			pack->icmp.checksum = checksum(pack, pack_size);
 
@@ -72,29 +75,29 @@ int ping_loop(int sockfd, char *arg, struct sockaddr_in *host_addr, packetvalue 
 			{
 				progval->pack_lost++;
 				gettimeofday(&ping_end, NULL);
+				seq++;
 				continue;
 			}
 			gettimeofday(&packet_end, NULL);
 			float packet_time = (packet_end.tv_sec - packet_start.tv_sec) * 1000 + ((packet_end.tv_usec - packet_start.tv_usec) / 1000.0);
 			if (flags->D_flag)
 				printf("[%ld.%ld] ", packet_start.tv_sec, packet_start.tv_usec);
-			if (flags->n_flag)
-				printf("%d bytes from %s: ", (int)sto, host->host_addr);
-			else if (is_addr)
-				printf("%d bytes from %s: ", (int)sto, arg);
-			else
-				printf("%d bytes from %s (%s): ", (int)sto, host->domain_name, host->host_addr);
+			// if (flags->n_flag)
+			// 	printf("%d bytes from %s: ", (int)sto, host->host_addr);
+			// else
+			printf("%d bytes from %s: ", (int)sto, host->host_addr);
 
-			if (flags->v_flag)
-				printf("icmp_seq=%d ident=%d ttl=%d time=%.2f ms", seq, pack->icmp.un.echo.id, ((struct iphdr *)buff)->ttl, packet_time);
-			else
-				printf("icmp_seq=%d ttl=%d time=%.2f ms", seq, ((struct iphdr *)buff)->ttl, packet_time);
+			// if (flags->v_flag)
+			// 	printf("icmp_seq=%d ident=%d ttl=%d time=%.3f ms", seq, pack->icmp.un.echo.id, ((struct iphdr *)buff)->ttl, packet_time);
+			// else
+			printf("icmp_seq=%d ttl=%d time=%.3f ms", seq, ((struct iphdr *)buff)->ttl, packet_time);
 			printf("\n");
 			progval->ptime_total += packet_time;
 			progval->ptime_total_2 += packet_time * packet_time;
 			progval->ptime_max = (packet_time > progval->ptime_max) ? packet_time : progval->ptime_max;
 			progval->ptime_min = (packet_time < progval->ptime_max || progval->ptime_min == 0) ? packet_time : progval->ptime_min;
 			gettimeofday(&ping_end, NULL);
+			seq++;
 		}
 	}
 	progval->pack_total = seq;
