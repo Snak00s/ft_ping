@@ -103,12 +103,9 @@ int main(int argc, char **argv)
 		close(sockfd);
 	}
 
-	// if (flags.v_flag)
-	// 	printf("ft_ping: sock4.fd: %d (socktype: %s), hints.ai_family: %s\n\nai->ai_family: %s, ai->ai_canonname: \'%s\'\n",
-	// 		sockfd, sock_name(SOCK_RAW), af_name(hints.ai_family), af_name(hostaddr.sin_family), host.cannon_name);
-
 	signal_handler();
-	if (!ping_loop(sockfd, argv[dst], &hostaddr, &progval, &host, &flags))
+	host.argv_dest = argv[dst];
+	if (!ping_loop(sockfd, &hostaddr, &progval, &host, &flags))
 	{
 		free_dnsinfo(&host);
 		close(sockfd);

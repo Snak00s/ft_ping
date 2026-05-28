@@ -2,26 +2,55 @@
 
 void	payload_size_check(char *str, packetvalue *progval)
 {
-	long size = atol(str);
-	if (size < 0 || size > 2147483647)
+	unsigned long long size = atol(str);
+	if (size > 65399)
 	{
-		fprintf(stderr, "ft_ping: invalid argument: %s: out of range: 0 <= value <= 2147483647\n", str);
+		fprintf(stderr, "ft_ping: option value too big: %s\n", str);
 		exit(1);
 	}
 	progval->payload_size = (int)size;
 	return ;
 }
 
+void	time_ping_check(char *str, packetvalue * progval)
+{
+	unsigned long long max_time = atoll(str);
+	if (max_time > 2147483647)
+	{
+		fprintf(stderr, "ft_ping: option value too big: %s\n", str);
+		// fprintf(stderr, "ft_ping: invalid argument: %s: out of range: 0 <= value <= 9223372036854775807\n", str);
+		exit(1);
+	}
+	else if (max_time == 0)
+	{
+		fprintf(stderr, "./ping/ping: option value too small: %s\n", str);
+		exit(1);
+	}
+	progval->max_possible_time = max_time;
+}
+
 void	nbr_packet_check(char *str, packetvalue *progval)
 {
 	unsigned long long nbr_packet = atoll(str);
-	if (nbr_packet < 1 || nbr_packet > 9223372036854775807)
-	{
-		fprintf(stderr, "ft_ping: invalid argument: %s: out of range: 0 <= value <= 9223372036854775807\n", str);
-		exit(1);
-	}
+	// if (nbr_packet < 1 || nbr_packet > 9223372036854775807)
+	// {
+	// 	fprintf(stderr, "ft_ping: invalid argument: %s: out of range: 0 <= value <= 9223372036854775807\n", str);
+	// 	exit(1);
+	// }
 	progval->nbr_max_packet = nbr_packet;
 	return ;
+}
+
+void	preload_check(char *str, packetvalue *progval)
+{
+	unsigned long long preload = atoll(str);
+	if (preload > 2147483647)
+	{
+		fprintf(stderr, "ft_ping: invalid preload value (%s)\n", str);
+		// fprintf(stderr, "ft_ping: invalid argument: %s: out of range: 0 <= value <= 9223372036854775807\n", str);
+		exit(1);
+	}
+	progval->preload = preload;
 }
 
 void	parse_int_option(char *str, size_t str_idx, char **strtab, size_t tabsize, packetvalue *progval, int *skip_arg, void (*check)(char *, packetvalue *))
@@ -33,7 +62,7 @@ void	parse_int_option(char *str, size_t str_idx, char **strtab, size_t tabsize, 
 	{
 		if (!ft_isdigit(str[i]) && str[i] != '-' && str[i] != '+')
 		{
-			printf("ft_ping: invalid argument: \'%s\'\n", str);
+			printf("ft_ping: invalid value: (`%1$ss\' near `%1$s\')\n", str);
 			exit(1);
 		}
 		count++;
@@ -53,7 +82,7 @@ void	parse_int_option(char *str, size_t str_idx, char **strtab, size_t tabsize, 
 	{
 		if (!ft_isdigit(next_str[i]) && next_str[i] != '-' && next_str[i] != '+')
 		{
-			printf("ft_ping: invalid argument: \'%s\'\n", next_str);
+			printf("ft_ping: invalid value: (`%1$s\' near `%1$s\')\n", next_str);
 			exit(1);
 		}
 		count++;
@@ -88,19 +117,21 @@ int	parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flag
 				}
 				switch (*(strtab[i] + idx))
 				{
-					case 'v': flags->v_flag = 1;
+					case 'v': flags->v_flag = 1; //mandatory
 						break;
-					case '?' || 'h': flags->qm_flag = 1;
+					case '?': flags->qm_flag = 1; //madatory
 						break;
-					case 'n': flags->n_flag = 1;
+					case 'n': flags->n_flag = 1; //a revoir
 						break;
-					case 'D': flags->D_flag = 1;
+					case 'q': flags->q_flag = 1;
 						break;
 					case 's': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, progval, &skip_arg, payload_size_check);
 						break;
 					case 'c': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, progval, &skip_arg, nbr_packet_check);
 						break;
-					case 'W': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, progval, &skip_arg, nbr_packet_check);
+					case 'w': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, progval, &skip_arg, time_ping_check);
+						break;
+					case 'l': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, progval, &skip_arg, preload_check);
 						break;
 					case '\0' : return (-1);
 						break;
@@ -126,7 +157,7 @@ int	parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flag
 	}
 	if (*destination == 0)
 	{
-		fprintf(stderr, "ft_ping: usage error: Destination address required\n");
+		fprintf(stderr, "ft_ping: missing host operand\n");
 		exit(1);
 	}
 	return (0);
