@@ -24,7 +24,7 @@ extern int g_alrm;
 
 //-----------------------------------------------------------
 
-typedef struct	packetvalue {
+typedef struct	packet_value {
 	float			ptime_min;
 	float			ptime_avg;
 	float			ptime_max;
@@ -34,27 +34,23 @@ typedef struct	packetvalue {
 	float			ptime_total_2;
 	unsigned int	pack_lost;
 	unsigned int	pack_total;
+} packet_value;
 
+typedef struct	ping_option_value {
+	struct timeval	timeout;
 	long			payload_size;
 	unsigned int	nbr_max_packet;
 	unsigned int	max_possible_time;
 	unsigned int	preload;
-} packetvalue;
-
-// typedef struct	ping_option_value {
-// 	long			payload_size;
-// 	unsigned int	nbr_max_packet;
-// 	unsigned int	max_possible_time;
-// 	unsigned int	preload;
-// } ping_option_value;
+} ping_option_value;
 
 
-typedef struct	dnsinfo {
+typedef struct	dns_info {
 	char	host_addr[20];
 	char	*cannon_name;
 	char	*domain_name;
 	char	*argv_dest;
-} dnsinfo;
+} dns_info;
 
 typedef struct	icmp_packet {
 	struct icmphdr	icmp;
@@ -73,13 +69,13 @@ typedef struct	ping_flags {
 
 //-----------------------------------------------------------
 
-int		resolve_dns(char *domain_name, struct sockaddr_in *host_addr, dnsinfo *host, struct addrinfo *hints);
-int		ping_loop(int sockfd, struct sockaddr_in *host_addr, packetvalue *progval, dnsinfo *host, ping_flags *flags);
+int		resolve_dns(char *domain_name, struct sockaddr_in *host_addr, dns_info *host, struct addrinfo *hints);
+int		ping_loop(int sockfd, struct sockaddr_in *host_addr, ping_option_value *ping_opt, dns_info *host, ping_flags *flags);
 char	*sock_name(int sock_type);
 char	*af_name(sa_family_t ai_family);
 char	*help();
-void	free_dnsinfo(dnsinfo *dns);
+void	free_dns_info(dns_info *dns);
 int		parse_ip(char *addr);
-int		parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flags, packetvalue *progval);
+int		parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flags, ping_option_value *ping_opt);
 
 #endif

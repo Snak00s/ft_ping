@@ -1,6 +1,6 @@
 #include"ping.h"
 
-int resolve_dns(char *domain_name, struct sockaddr_in *hostaddr, dnsinfo *host, struct addrinfo *hints)
+int resolve_dns(char *domain_name, struct sockaddr_in *hostaddr, dns_info *host, struct addrinfo *hints)
 {
 	struct addrinfo *result;
 
@@ -41,7 +41,7 @@ int resolve_dns(char *domain_name, struct sockaddr_in *hostaddr, dnsinfo *host, 
 
 		if (parse_ip(addr))
 		{
-			free_dnsinfo(host);
+			free_dns_info(host);
 			ft_strlcpy(host->host_addr, addr, ft_strlen(addr) + 1);
 			host->domain_name = ft_strdup(name);
 			if (!host->domain_name)

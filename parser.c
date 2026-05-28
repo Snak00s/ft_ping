@@ -1,6 +1,6 @@
 #include "ping.h"
 
-void	payload_size_check(char *str, packetvalue *progval)
+static void	payload_size_check(char *str, ping_option_value *ping_opt)
 {
 	unsigned long long size = atol(str);
 	if (size > 65399)
@@ -8,11 +8,11 @@ void	payload_size_check(char *str, packetvalue *progval)
 		fprintf(stderr, "ft_ping: option value too big: %s\n", str);
 		exit(1);
 	}
-	progval->payload_size = (int)size;
+	ping_opt->payload_size = (int)size;
 	return ;
 }
 
-void	time_ping_check(char *str, packetvalue * progval)
+static void	time_ping_check(char *str, ping_option_value *ping_opt)
 {
 	unsigned long long max_time = atoll(str);
 	if (max_time > 2147483647)
@@ -26,10 +26,10 @@ void	time_ping_check(char *str, packetvalue * progval)
 		fprintf(stderr, "./ping/ping: option value too small: %s\n", str);
 		exit(1);
 	}
-	progval->max_possible_time = max_time;
+	ping_opt->max_possible_time = max_time;
 }
 
-void	nbr_packet_check(char *str, packetvalue *progval)
+static void	nbr_packet_check(char *str, ping_option_value *ping_opt)
 {
 	unsigned long long nbr_packet = atoll(str);
 	// if (nbr_packet < 1 || nbr_packet > 9223372036854775807)
@@ -37,11 +37,11 @@ void	nbr_packet_check(char *str, packetvalue *progval)
 	// 	fprintf(stderr, "ft_ping: invalid argument: %s: out of range: 0 <= value <= 9223372036854775807\n", str);
 	// 	exit(1);
 	// }
-	progval->nbr_max_packet = nbr_packet;
+	ping_opt->nbr_max_packet = nbr_packet;
 	return ;
 }
 
-void	preload_check(char *str, packetvalue *progval)
+static void	preload_check(char *str, ping_option_value *ping_opt)
 {
 	unsigned long long preload = atoll(str);
 	if (preload > 2147483647)
@@ -50,10 +50,26 @@ void	preload_check(char *str, packetvalue *progval)
 		// fprintf(stderr, "ft_ping: invalid argument: %s: out of range: 0 <= value <= 9223372036854775807\n", str);
 		exit(1);
 	}
-	progval->preload = preload;
+	ping_opt->preload = preload;
 }
 
-void	parse_int_option(char *str, size_t str_idx, char **strtab, size_t tabsize, packetvalue *progval, int *skip_arg, void (*check)(char *, packetvalue *))
+static void	timeout_check(char *str, ping_option_value *ping_opt)
+{
+	unsigned long long sec = atoll(str);
+	if (sec > 2147483647)
+	{
+		fprintf(stderr, "ft_ping: option value too big: %s\n", str);
+		exit(1);
+	}
+	else if (sec == 0)
+	{
+		fprintf(stderr, "./ping/ping: option value too small: %s\n", str);
+		exit(1);
+	}
+	ping_opt->timeout.tv_sec = sec;
+}
+
+static void	parse_int_option(char *str, size_t str_idx, char **strtab, size_t tabsize, ping_option_value *ping_opt, int *skip_arg, void (*check)(char *, ping_option_value *))
 {
 	int i = 0;
 
@@ -69,7 +85,7 @@ void	parse_int_option(char *str, size_t str_idx, char **strtab, size_t tabsize, 
 		i++;
 	}
 	if (count != 0) {
-		(*check)(str, progval);
+		(*check)(str, ping_opt);
 		*skip_arg = 1;
 		return ;
 	}
@@ -89,13 +105,13 @@ void	parse_int_option(char *str, size_t str_idx, char **strtab, size_t tabsize, 
 		i++;
 	}
 	if (count != 0) {
-		(*check)(next_str, progval);
+		(*check)(next_str, ping_opt);
 		*skip_arg = 1;
 		return ;
 	}
 }
 
-int	parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flags, packetvalue *progval)
+int	parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flags, ping_option_value *ping_opt)
 {
 	int skip_arg = 0;
 	for (size_t i = 1; i < tabsize; i++)
@@ -125,13 +141,15 @@ int	parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flag
 						break;
 					case 'q': flags->q_flag = 1;
 						break;
-					case 's': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, progval, &skip_arg, payload_size_check);
+					case 's': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, ping_opt, &skip_arg, payload_size_check);
 						break;
-					case 'c': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, progval, &skip_arg, nbr_packet_check);
+					case 'c': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, ping_opt, &skip_arg, nbr_packet_check);
 						break;
-					case 'w': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, progval, &skip_arg, time_ping_check);
+					case 'w': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, ping_opt, &skip_arg, time_ping_check);
 						break;
-					case 'l': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, progval, &skip_arg, preload_check);
+					case 'W': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, ping_opt, &skip_arg, timeout_check);
+						break;
+					case 'l': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, ping_opt, &skip_arg, preload_check);
 						break;
 					case '\0' : return (-1);
 						break;
