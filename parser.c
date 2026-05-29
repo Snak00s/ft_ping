@@ -111,6 +111,55 @@ static void	parse_int_option(char *str, size_t str_idx, char **strtab, size_t ta
 	}
 }
 
+int		ft_ishex(char c)
+{
+	if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
+		return (1);
+	return (0);
+}
+
+void	payload_patern(char *str, size_t str_idx, char **strtab, size_t tabsize, ping_option_value *ping_opt, int *skip_arg)
+{
+	int i = 0;
+
+	int count = 0;
+	while (str[i])
+	{
+		if (!ft_ishex(str[i]) && i < 32)
+		{
+			printf("ft_ping: patterns must be specified as hex digits: %c\n", str[i]);
+			exit(1);
+		}
+		count++;
+		i++;
+	}
+	if (count != 0) {
+		ping_opt->payload_patern = str;
+		*skip_arg = 1;
+		return ;
+	}
+	
+	if (str_idx + 1 == tabsize)
+		exit(1);
+	char *next_str = strtab[str_idx + 1];
+	i = 0;
+	while (next_str[i])
+	{
+		if (!ft_ishex(next_str[i]) && i < 32)
+		{
+			printf("ft_ping: patterns must be specified as hex digits: %c\n", next_str[i]);
+			exit(1);
+		}
+		count++;
+		i++;
+	}
+	if (count != 0) {
+		ping_opt->payload_patern = next_str;
+		*skip_arg = 1;
+		return ;
+	}
+}
+
 int	parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flags, ping_option_value *ping_opt)
 {
 	int skip_arg = 0;
@@ -150,6 +199,8 @@ int	parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flag
 					case 'W': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, ping_opt, &skip_arg, timeout_check);
 						break;
 					case 'l': parse_int_option(strtab[i] + idx + 1, i, strtab, tabsize, ping_opt, &skip_arg, preload_check);
+						break;
+					case 'p': payload_patern(strtab[i] + idx + 1, i, strtab, tabsize, ping_opt, &skip_arg);
 						break;
 					case '\0' : return (-1);
 						break;

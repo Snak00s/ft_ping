@@ -17,7 +17,7 @@ static uint16_t checksum(void *addr, int size)
 	return (~sum);
 }
 
-static icmp_packet *fill_packethdr(int payload_size)
+static icmp_packet *fill_packethdr(int payload_size, char *patern)
 {
     icmp_packet *pack = ft_calloc(1, sizeof(icmp_packet) + payload_size);
     if (!pack)
@@ -27,8 +27,23 @@ static icmp_packet *fill_packethdr(int payload_size)
     pack->icmp.code = 0;
     pack->icmp.un.echo.id = getpid();
 
-    for (int i = 0; i < payload_size; i++)
-        pack->garbage[i] = 0x10 + (i % 112);
+	if (!patern)
+	{
+		for (int i = 0; i < payload_size; i++)
+			pack->garbage[i] = 0x10 + (i % 112);
+	}
+	else
+	{
+		int 	pat_len = ft_strlen(patern);
+		char	hex[2];
+		for (int i = 0; i < payload_size / 2; i++)
+		{
+			hex[0] = patern[(i * 2) % pat_len];
+			hex[1] = patern[((i * 2) + 1) % pat_len];
+			printf("%d = %s\n", i, hex);
+			pack->garbage[i] = ft_atoi(hex);
+		}
+	}
 
     return pack;
 }
@@ -60,7 +75,7 @@ int ping_loop(int sockfd, struct sockaddr_in *host_addr, ping_option_value *ping
 	uint16_t		seq = 0;
 	char			buff[1024];
 	packet_value	progval;
-	icmp_packet		*pack = fill_packethdr(ping_opt->payload_size);
+	icmp_packet		*pack = fill_packethdr(ping_opt->payload_size, ping_opt->payload_patern);
 	if (!pack)
 		return (0);
 

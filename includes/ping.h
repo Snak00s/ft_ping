@@ -42,6 +42,7 @@ typedef struct	ping_option_value {
 	unsigned int	nbr_max_packet;
 	unsigned int	max_possible_time;
 	unsigned int	preload;
+	char			*payload_patern;
 } ping_option_value;
 
 
@@ -65,6 +66,7 @@ typedef struct	ping_flags {
 	int	qm_flag;
 	int s_flag;
 	int	v_flag;
+	int p_flag;
 } ping_flags;
 
 //-----------------------------------------------------------

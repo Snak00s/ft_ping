@@ -78,6 +78,9 @@ int main(int argc, char **argv)
 	else if (ret == -1)
 		return (fprintf(stderr, "ft_ping: : Name or service not known\n"), 2);
 
+	
+	printf("%s\n", ping_opt.payload_patern);
+
 	if (!resolve_dns(argv[dst], &hostaddr, &host, &hints))
 		return (2);
 
