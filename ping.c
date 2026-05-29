@@ -117,6 +117,7 @@ int ping_loop(int sockfd, struct sockaddr_in *host_addr, ping_option_value *ping
 
 	int pack_size = ping_opt->payload_size + (int)(sizeof(struct icmphdr));
 
+	// debut zhile
 	if (flags->v_flag)
 		printf("PING %s (%s): %ld data bytes, id 0x%x = %d\n", host->argv_dest, host->host_addr, ping_opt->payload_size, pack->icmp.un.echo.id, pack->icmp.un.echo.id);
 	else
@@ -171,6 +172,8 @@ int ping_loop(int sockfd, struct sockaddr_in *host_addr, ping_option_value *ping
 	progval.pack_total = seq;
 	progval.ptime_avg = progval.ptime_total / seq;
 	progval.ptime_mdev = sqrtf(progval.ptime_total_2 / seq - powf(progval.ptime_avg, 2));
+	// print result
+	//fin while
 	free(pack);
 	return (print_result(&progval, host->argv_dest));
 }

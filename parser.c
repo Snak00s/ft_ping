@@ -160,9 +160,10 @@ void	payload_patern(char *str, size_t str_idx, char **strtab, size_t tabsize, pi
 	}
 }
 
-int	parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flags, ping_option_value *ping_opt)
+int	parse_args(char **strtab, size_t tabsize, int *destination,/* char **dsts,*/ ping_flags *flags, ping_option_value *ping_opt)
 {
 	int skip_arg = 0;
+	// int dst_idx = 0;
 	for (size_t i = 1; i < tabsize; i++)
 	{
 		if (skip_arg)
@@ -212,6 +213,7 @@ int	parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flag
 		}
 		else
 		{
+			// dsts[dst_idx++] = strtab[i];
 			if (*destination != 0) {
 				fprintf(stderr, "ft_ping: usage error: Can accept only 1 destination\n");
 				exit(1);
@@ -224,10 +226,11 @@ int	parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flag
 		printf("%s\n", help());
 		exit(2);
 	}
-	if (*destination == 0)
+	if (*destination == 0) // if (dst_idx == 0)
 	{
 		fprintf(stderr, "ft_ping: missing host operand\n");
 		exit(1);
 	}
+	// dsts[dst_idx] = NULL;
 	return (0);
 }

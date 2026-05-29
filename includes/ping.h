@@ -78,6 +78,6 @@ char	*af_name(sa_family_t ai_family);
 char	*help();
 void	free_dns_info(dns_info *dns);
 int		parse_ip(char *addr);
-int		parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flags, ping_option_value *ping_opt);
+int		parse_args(char **strtab, size_t tabsize, int *destination, /*char **dsts,*/ ping_flags *flags, ping_option_value *ping_opt);
 
 #endif

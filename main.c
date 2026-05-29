@@ -58,6 +58,19 @@ int main(int argc, char **argv)
 	ping_opt.timeout.tv_sec = 10;
 	ping_opt.timeout.tv_usec = 0;
 
+	int	dst = 0;
+	// char *destinations[argc];
+
+	int ret = parse_args(argv, argc, &dst,/* destinations,*/ &flags, &ping_opt);
+	if (ret > 0)
+		return (fprintf(stderr, "ft_ping: invalid option -- \'%c\'\n\n%s", (char)ret, help()), 2);
+	else if (ret == -1)
+		return (fprintf(stderr, "ft_ping: : Name or service not known\n"), 2);
+
+	// int nbr_dest = 0;
+	// while (destinations[nbr_dest])
+	// 	nbr_dest++;
+
 	dns_info			host;
 	ft_memset(&host, 0, sizeof(host));
 
@@ -69,17 +82,6 @@ int main(int argc, char **argv)
 		.ai_socktype = SOCK_RAW,
 		.ai_flags = AI_CANONNAME
 	};
-
-	int	dst = 0;
-
-	int ret = parse_args(argv, argc, &dst, &flags, &ping_opt);
-	if (ret > 0)
-		return (fprintf(stderr, "ft_ping: invalid option -- \'%c\'\n\n%s", (char)ret, help()), 2);
-	else if (ret == -1)
-		return (fprintf(stderr, "ft_ping: : Name or service not known\n"), 2);
-
-	
-	printf("%s\n", ping_opt.payload_patern);
 
 	if (!resolve_dns(argv[dst], &hostaddr, &host, &hints))
 		return (2);
