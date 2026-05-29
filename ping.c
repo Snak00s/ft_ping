@@ -17,16 +17,23 @@ static uint16_t checksum(void *addr, int size)
 	return (~sum);
 }
 
+static void	swap_char(char *c1, char *c2)
+{
+	char temp = *c2;
+
+	*c2 = *c1;
+	*c1 = temp;
+}
+
 static icmp_packet *fill_packethdr(int payload_size, char *patern)
 {
-    icmp_packet *pack = ft_calloc(1, sizeof(icmp_packet) + payload_size);
-    if (!pack)
-        return NULL;
+	icmp_packet *pack = ft_calloc(1, sizeof(icmp_packet) + payload_size);
+	if (!pack)
+		return NULL;
 
-    pack->icmp.type = ICMP_ECHO;
-    pack->icmp.code = 0;
-    pack->icmp.un.echo.id = getpid();
-
+	pack->icmp.type = ICMP_ECHO;
+	pack->icmp.code = 0;
+	pack->icmp.un.echo.id = getpid();
 	if (!patern)
 	{
 		for (int i = 0; i < payload_size; i++)
@@ -35,17 +42,44 @@ static icmp_packet *fill_packethdr(int payload_size, char *patern)
 	else
 	{
 		int 	pat_len = ft_strlen(patern);
-		char	hex[2];
-		for (int i = 0; i < payload_size / 2; i++)
+		char	hex[3];
+		hex[2] = '\0';
+		int i = 0;
+		if (pat_len > 1)
 		{
-			hex[0] = patern[(i * 2) % pat_len];
-			hex[1] = patern[((i * 2) + 1) % pat_len];
-			printf("%d = %s\n", i, hex);
-			pack->garbage[i] = ft_atoi(hex);
+			pat_len = pat_len > 32 ? 32 : pat_len;
+			int j = 0;
+			int idx = 0;
+			while (i < payload_size)
+			{
+				hex[idx++] = patern[j++];
+				if (patern[j] == '\0')
+				{
+					j = 0;
+					if (pat_len % 2 != 0)
+					{
+						swap_char(&hex[0], &hex[1]);
+						idx++;
+					}
+				}
+				if (idx > 1)
+				{
+					pack->garbage[i++] = strtol(hex, NULL, 16);
+					idx = 0;
+					hex[0] = hex[1] = '0';
+				}
+			}
+		}
+		else
+		{
+			hex[0] = '0';
+			hex[1] = *patern;
+			char hex_char = strtol(hex, NULL, 16);
+			while (i < payload_size)
+				pack->garbage[i++] = hex_char;
 		}
 	}
-
-    return pack;
+	return (pack);
 }
 
 static int	print_result(packet_value *progval, char *hostname)
