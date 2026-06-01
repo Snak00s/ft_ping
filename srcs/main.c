@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
 	int ret = parse_args(argv, argc, destinations, &flags, &ping_opt);
 	if (ret > 0)
-		return (fprintf(stderr, "ft_ping: invalid option -- \'%c\'\n\n%s\n", (char)ret, help()), 2);
+		return (fprintf(stderr, "ft_ping: invalid option -- \'%c\'\n%s\n", (char)ret, wrong_usage()), 2);
 	else if (ret == -1)
 		return (fprintf(stderr, "ft_ping: : Name or service not known\n"), 2);
 
