@@ -225,7 +225,7 @@ int	parse_args(char **strtab, size_t tabsize, char **dsts, ping_flags *flags, pi
 	}
 	if (dst_idx == 0)
 	{
-		fprintf(stderr, "ft_ping: missing host operand\n");
+		fprintf(stderr, "ft_ping: missing host operand\n%s\n", wrong_usage());
 		exit(1);
 	}
 	dsts[dst_idx] = NULL;

@@ -28,31 +28,6 @@ static void	signal_handler(void)
 	sigaction(SIGALRM, &alrm_sa, 0);
 }
 
-char *help()
-{
-	return ("Usage: ping [OPTION...] HOST ...\n\
-Send ICMP ECHO_REQUEST packets to network hosts.\n\
-\n\
- Options valid for all request types:\n\
-\n\
-  -c                         stop after sending NUMBER packets\n\
-  -n                         do not resolve host addresses\n\
-  -v                         verbose output\n\
-  -w                         stop after N seconds\n\
-  -W                         number of seconds to wait for response\n\
-\n\
- Options valid for --echo requests:\n\
-\n\
-  -f                         flood ping (root only)\n\
-  -l                         send NUMBER packets as fast as possible before\n\
-                             falling into normal mode of behavior (root only)\n\
-  -p                         fill ICMP packet with given pattern (hex)\n\
-  -q                         quiet output\n\
-  -s                         send NUMBER data octets\n\
-\n\
-  -?                         give this help list\n");
-}
-
 int main(int argc, char **argv)
 {
 	ping_flags			flags;
@@ -68,7 +43,7 @@ int main(int argc, char **argv)
 
 	int ret = parse_args(argv, argc, destinations, &flags, &ping_opt);
 	if (ret > 0)
-		return (fprintf(stderr, "ft_ping: invalid option -- \'%c\'\n\n%s", (char)ret, help()), 2);
+		return (fprintf(stderr, "ft_ping: invalid option -- \'%c\'\n\n%s\n", (char)ret, help()), 2);
 	else if (ret == -1)
 		return (fprintf(stderr, "ft_ping: : Name or service not known\n"), 2);
 
@@ -85,8 +60,8 @@ int main(int argc, char **argv)
 	struct sockaddr_in	hostaddr[nbr_dest];
 	for (int i = 0; i != nbr_dest; i++)
 	{
-		// ft_memset(&(host[nbr_dest]), 0, sizeof(host[nbr_dest]));
-		// ft_memset(&(hostaddr[nbr_dest]), 0, sizeof(hostaddr[nbr_dest]));
+		host[i].cannon_name = NULL;
+		host[i].domain_name = NULL;
 		if (!resolve_dns(destinations[i], &hostaddr[i], &host[i], &hints))
 			return (2);
 		host[i].argv_dest = destinations[i];

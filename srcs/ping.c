@@ -150,7 +150,11 @@ int ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nbr
 				gettimeofday(&packet_start, NULL);
 				ssize_t sto = sendto(sockfd, pack, pack_size, io_flag, (const struct sockaddr *)&host_addr[i], sizeof(host_addr[i]));
 				if (sto == -1)
-					return (free(pack), fprintf(stderr, "%s\n", strerror(errno)), 0);
+				{
+					free(pack);
+					fprintf(stderr, "%s\n", strerror(errno));
+					return (0);
+				}
 
 				struct sockaddr_in	reply;
 				socklen_t			rlen = sizeof(reply);

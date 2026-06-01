@@ -78,6 +78,7 @@ int		ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nb
 char	*sock_name(int sock_type);
 char	*af_name(sa_family_t ai_family);
 char	*help();
+char	*wrong_usage();
 void	free_dns_info(dns_info *dns, int nbr_dest);
 int		parse_ip(char *addr);
 int		parse_args(char **strtab, size_t tabsize, char **dsts, ping_flags *flags, ping_option_value *ping_opt);

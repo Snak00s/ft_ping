@@ -12,6 +12,9 @@ int resolve_dns(char *domain_name, struct sockaddr_in *hostaddr, dns_info *host,
 		case EAI_SYSTEM:
 			fprintf(stderr, "ft_ping: %s: system error %s\n", domain_name, strerror(errno));
 			return (0);
+		case EAI_AGAIN:
+			fprintf(stderr, "ft_ping: %s: unknown host\n", domain_name);
+			return (0);
 		default:
 			fprintf(stderr, "ft_ping: %s: %s\n", domain_name, gai_strerror(gai_rc));
 			return (0);
@@ -45,9 +48,12 @@ int resolve_dns(char *domain_name, struct sockaddr_in *hostaddr, dns_info *host,
 			host->domain_name = ft_strdup(name);
 			if (!host->domain_name)
 				return (0);
-			host->cannon_name = ft_strdup(ai->ai_canonname);
-			if (!host->cannon_name)
-				return (0);
+			if (ai->ai_canonname)
+			{
+				host->cannon_name = ft_strdup(ai->ai_canonname);
+				if (!host->cannon_name)
+					return (0);
+			}
 			hostaddr->sin_family = ai->ai_family;
 			break;
 		}
