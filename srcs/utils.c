@@ -191,12 +191,15 @@ char *sock_name(int sock_type)
 	}
 }
 
-void	free_dnsinfo(dnsinfo *dns)
+void	free_dns_info(dns_info *dns, int nbr_dest)
 {
-	free(dns->cannon_name);
-	dns->cannon_name = NULL;
-	free(dns->domain_name);
-	dns->domain_name = NULL;
+	for (int i = 0; i != nbr_dest; i++)
+	{
+		free(dns[i].cannon_name);
+		dns[i].cannon_name = NULL;
+		free(dns[i].domain_name);
+		dns[i].domain_name = NULL;
+	}
 }
 
 int	parse_ip(char *addr)

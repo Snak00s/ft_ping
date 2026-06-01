@@ -24,7 +24,7 @@ extern int g_alrm;
 
 //-----------------------------------------------------------
 
-typedef struct	packetvalue {
+typedef struct	packet_value {
 	float			ptime_min;
 	float			ptime_avg;
 	float			ptime_max;
@@ -34,15 +34,25 @@ typedef struct	packetvalue {
 	float			ptime_total_2;
 	unsigned int	pack_lost;
 	unsigned int	pack_total;
-	long			payload_size;
-	unsigned long long			nbr_max_packet;
-} packetvalue;
+} packet_value;
 
-typedef struct	dnsinfo {
+typedef struct	ping_option_value {
+	struct timeval	timeout;
+	long			payload_size;
+	unsigned int	nbr_max_packet;
+	unsigned int	max_possible_time;
+	unsigned int	preload;
+	char			*payload_patern;
+} ping_option_value;
+
+
+typedef struct	dns_info {
 	char	host_addr[20];
 	char	*cannon_name;
 	char	*domain_name;
-} dnsinfo;
+	char	*argv_dest;
+	int		ping_started;
+} dns_info;
 
 typedef struct	icmp_packet {
 	struct icmphdr	icmp;
@@ -50,23 +60,26 @@ typedef struct	icmp_packet {
 } icmp_packet;
 
 typedef struct	ping_flags {
-	int	v_flag;
-	int	qm_flag;
-	int n_flag;
-	int D_flag;
-	int s_flag;
 	int c_flag;
+	int f_flag;
+	int l_flag;
+	int n_flag;
+	int q_flag;
+	int	qm_flag;
+	int s_flag;
+	int	v_flag;
+	int p_flag;
 } ping_flags;
 
 //-----------------------------------------------------------
 
-int		resolve_dns(char *domain_name, struct sockaddr_in *host_addr, dnsinfo *host, struct addrinfo *hints);
-int		ping_loop(int sockfd, char *arg, struct sockaddr_in *host_addr, packetvalue *progval, dnsinfo *host, ping_flags *flags);
+int		resolve_dns(char *domain_name, struct sockaddr_in *host_addr, dns_info *host, struct addrinfo *hints);
+int		ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nbr_dest, ping_option_value *ping_opt, ping_flags *flags, int io_flag);
 char	*sock_name(int sock_type);
 char	*af_name(sa_family_t ai_family);
 char	*help();
-void	free_dnsinfo(dnsinfo *dns);
+void	free_dns_info(dns_info *dns, int nbr_dest);
 int		parse_ip(char *addr);
-int		parse_args(char **strtab, size_t tabsize, int *destination, ping_flags *flags, packetvalue *progval);
+int		parse_args(char **strtab, size_t tabsize, char **dsts, ping_flags *flags, ping_option_value *ping_opt);
 
 #endif
