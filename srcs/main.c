@@ -30,6 +30,9 @@ static void	signal_handler(void)
 
 int main(int argc, char **argv)
 {
+	// printf("%lu, %lu : %lu, %lu\n", 0x87d61e6a00000000, 0xf3d6070000000000, swapLongEndian(0x87d61e6a00000000),  swapLongEndian(0xf3d6070000000000));
+	// printf("%lu, %lu : %lu, %lu\n", 0x0fe81e6a00000000, 0x9d70040000000000, swapLongEndian(0x0fe81e6a00000000),  swapLongEndian(0x9d70040000000000));
+	// printf("%lu, %lu : %lu, %lu\n", 0x10e81e6a00000000, 0x8c9f040000000000, swapLongEndian(0x10e81e6a00000000),  swapLongEndian(0x8c9f040000000000));
 	ping_flags			flags;
 	ft_memset(&flags, 0, sizeof(flags));
 
@@ -83,7 +86,7 @@ int main(int argc, char **argv)
 	}
 
 	signal_handler();
-	ret = ping_loop(sockfd, hostaddr, host, nbr_dest, &ping_opt, &flags, (flags.f_flag == 0) ? 0 : O_NONBLOCK);
+	ret = ping_loop(sockfd, hostaddr, host, nbr_dest, &ping_opt, &flags, (flags.f_flag == 1 || flags.l_flag == 1) ? MSG_DONTWAIT : 0);
 	free_dns_info(host, nbr_dest);
 	close(sockfd);
 	return (ret);

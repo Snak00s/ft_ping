@@ -11,3 +11,5 @@
    g. Afficher résultat
    h. sleep(1)
 5. À CTRL+C → afficher stats
+
+sudo tcpdump -i enp0s3 -XX icmp
