@@ -258,7 +258,7 @@ uint64_t	swapLongEndian(uint64_t nbr)
 	uint8_t b7 = (uint8_t)(nbr >> 8);
 	uint8_t b8 = (uint8_t)(nbr);
 
-	uint64_t newnbr = ((uint64_t)b8 << 56) | ((uint64_t)b7 << 48) |((uint64_t)b6 << 40) |((uint64_t)b5 << 32) |((uint64_t)b4 << 24) |((uint64_t)b3 << 16) |((uint64_t)b2 << 8) |((uint64_t)b1);
+	uint64_t newnbr = ((uint64_t)b8 << 56) | ((uint64_t)b7 << 48) | ((uint64_t)b6 << 40) | ((uint64_t)b5 << 32) | ((uint64_t)b4 << 24) | ((uint64_t)b3 << 16) | ((uint64_t)b2 << 8) | ((uint64_t)b1);
 
 	return (newnbr);
 }
