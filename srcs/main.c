@@ -1,18 +1,11 @@
 #include"ping.h"
 
 int	g_sig = 0;
-int g_alrm = 1;
 
 static void	handler(int sig)
 {
 	(void)sig;
 	g_sig = 1;
-}
-
-static void	alarm_handler(int sig)
-{
-	(void)sig;
-	g_alrm = 1;
 }
 
 static void	signal_handler(void)
@@ -21,11 +14,6 @@ static void	signal_handler(void)
 	ft_memset(&sa, 0, sizeof(struct sigaction));
 	sa.sa_handler = &handler;
 	sigaction(SIGINT, &sa, 0);
-
-	struct sigaction	alrm_sa;
-	ft_memset(&alrm_sa, 0, sizeof(struct sigaction));
-	alrm_sa.sa_handler = &alarm_handler;
-	sigaction(SIGALRM, &alrm_sa, 0);
 }
 
 int main(int argc, char **argv)

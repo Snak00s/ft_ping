@@ -17,10 +17,10 @@
 # include <sys/time.h>
 # include <signal.h>
 # include <errno.h>
+# include <sys/select.h>
 # include "../libft/libft.h"
 
 extern int g_sig;
-extern int g_alrm;
 
 //-----------------------------------------------------------
 
