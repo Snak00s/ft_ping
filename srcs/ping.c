@@ -107,8 +107,6 @@ static int stop_ping_cond(ping_option_value *ping_opt, unsigned long long nbr_pa
 void	fill_garbage_timestamp(char *pack_garbage, struct timeval *pack_start)
 {
 	// remplir les 0 a 16 bytes avec le timestamp;
-	// struct timeval pack_start;
-	// gettimeofday(&pack_start, NULL);
 
 	for (int i = 0; i < 8; i++)
 	{
@@ -155,6 +153,16 @@ int send_request(int sockfd, icmp_packet *pack, ping_option_value *ping_opt, int
 	return (1);
 }
 
+void	wait_time(struct timeval *packet_start)
+{
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	long elapsed_us = (now.tv_sec - packet_start->tv_sec) * 1000000
+					+ (now.tv_usec - packet_start->tv_usec);
+	if (elapsed_us < 1000000)
+		usleep(1000000 - elapsed_us);
+}
+
 int ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nbr_dest, ping_option_value *ping_opt, ping_flags *flags, int io_flag)
 {
 	struct timeval	packet_start, packet_end, ping_start, ping_end;
@@ -183,89 +191,69 @@ int ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nbr
 		seq = 0;
 		while (g_sig == 0 && stop_ping_cond(ping_opt, nbr_packet, progval.total_time))
 		{
-			// if (flags->f_flag || ping_opt->preload != 0)
-			// {
-				if (ping_opt->preload != 0)
-					ping_opt->preload--;
+			if (!nbr_packet)
+				gettimeofday(&ping_start, NULL);
+			nbr_packet++;
 
-				if (!nbr_packet)
-					gettimeofday(&ping_start, NULL);
-				nbr_packet++;
+			if (!send_request(sockfd, pack, ping_opt, io_flag, host_addr[i], seq, &packet_start))
+				return (0);
 
-				if (!send_request(sockfd, pack, ping_opt, io_flag, host_addr[i], seq, &packet_start))
-					return (0);
-				seq++;
+			fd_set	rec_fd;
+			FD_ZERO(&rec_fd);
+			FD_SET(sockfd, &rec_fd);
+			struct timeval timeout = {1, 0};
 
-				fd_set	rec_fd;
-				FD_ZERO(&rec_fd);
-				FD_SET(sockfd, &rec_fd);
-				struct timeval timeout = {1, 0};
+			int sel = select(sockfd + 1, &rec_fd, 0, 0, &timeout);
+			if (sel == 0)
+			{
+				printf("Request timeout for icmp_seq %d\n", seq - 1);
+				progval.pack_lost++;
+			}
+			else if (sel > 0)
+			{
+				struct sockaddr_in	reply;
+				socklen_t			rlen = sizeof(reply);
 
-				int sel = select(sockfd + 1, &rec_fd, 0, 0, &timeout);
-				if (sel == 0)
+				ssize_t rfm = recvfrom(sockfd, buff, sizeof(buff), io_flag, (struct sockaddr *)&reply, &rlen);
+				if (rfm == -1)
 				{
-					printf("Request timeout for icmp_seq %d\n", seq);
-					progval.pack_lost++;
+					gettimeofday(&ping_end, NULL);
+					continue;
 				}
-				else if (sel > 0)
+				gettimeofday(&packet_end, NULL);
+
+				struct icmphdr *icmp_rec = (void *)buff + sizeof(struct iphdr);
+				if (ping_opt->payload_size >= 16)
 				{
-					struct sockaddr_in	reply;
-					socklen_t			rlen = sizeof(reply);
-
-					ssize_t rfm = recvfrom(sockfd, buff, sizeof(buff), io_flag, (struct sockaddr *)&reply, &rlen);
-					if (rfm == -1)
+					float packet_time = (packet_end.tv_sec - packet_start.tv_sec) * 1000 + ((packet_end.tv_usec - packet_start.tv_usec) / 1000.0);
+					progval.ptime_total += packet_time;
+					progval.ptime_total_2 += packet_time * packet_time;
+					progval.ptime_max = (packet_time > progval.ptime_max) ? packet_time : progval.ptime_max;
+					progval.ptime_min = (packet_time < progval.ptime_min || progval.ptime_min == 0) ? packet_time : progval.ptime_min;
+					if (!flags->q_flag && !flags->f_flag)
 					{
-						printf("lost\n");
-						progval.pack_lost++;
-						gettimeofday(&ping_end, NULL);
-						// seq++;
-						continue;
+						printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n",
+							(int)(rfm - sizeof(struct iphdr)), host[i].host_addr, htons(icmp_rec->un.echo.sequence),
+							((struct iphdr *)buff)->ttl, packet_time);
 					}
-					gettimeofday(&packet_end, NULL);
-
-					struct icmphdr *icmp_rec = (void *)buff + sizeof(struct iphdr);
-					printf("returned code : %d\n", icmp_rec->code);
-					if (ping_opt->payload_size >= 16)
-					{
-						// packet_start = (struct timeval *)(buff + sizeof(struct icmphdr) + sizeof(struct iphdr));
-						float packet_time = (packet_end.tv_sec - packet_start.tv_sec) * 1000 + ((packet_end.tv_usec - packet_start.tv_usec) / 1000.0);
-						progval.ptime_total += packet_time;
-						progval.ptime_total_2 += packet_time * packet_time;
-						progval.ptime_max = (packet_time > progval.ptime_max) ? packet_time : progval.ptime_max;
-						progval.ptime_min = (packet_time < progval.ptime_min || progval.ptime_min == 0) ? packet_time : progval.ptime_min;
-						if (!flags->q_flag && !flags->f_flag)
-						{
-							printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n",
-								(int)(rfm - sizeof(struct iphdr)), host[i].host_addr, htons(icmp_rec->un.echo.sequence),
-								((struct iphdr *)buff)->ttl, packet_time);
-						}
-					}
-					else if (!flags->q_flag && !flags->f_flag)
-						printf("%d bytes from %s: icmp_seq=%d ttl=%d\n", (int)(rfm - sizeof(struct iphdr)), host[i].host_addr, htons(icmp_rec->un.echo.sequence), ((struct iphdr *)buff)->ttl);
 				}
-				else
+				else if (!flags->q_flag && !flags->f_flag)
+					printf("%d bytes from %s: icmp_seq=%d ttl=%d\n", (int)(rfm - sizeof(struct iphdr)), host[i].host_addr, htons(icmp_rec->un.echo.sequence), ((struct iphdr *)buff)->ttl);
+			}
+			else
+				if (errno != EINTR)
 					fprintf(stderr, "select error: %s\n", strerror(errno));
-				struct timeval now;
-				gettimeofday(&now, NULL);
-				long elapsed_us = (now.tv_sec - packet_start.tv_sec) * 1000000
-								+ (now.tv_usec - packet_start.tv_usec);
-				if (elapsed_us < 1000000)
-					usleep(1000000 - elapsed_us);
-			// }
+			if (!(flags->f_flag || ping_opt->preload))
+				wait_time(&packet_start);
+			else if (ping_opt->preload)
+				ping_opt->preload--;
 			gettimeofday(&ping_end, NULL);
 			progval.total_time = (ping_end.tv_sec - ping_start.tv_sec) + ((ping_end.tv_usec - ping_start.tv_usec) / 1000000.0);
+			seq++;
 		}
-		if (seq == 0)
-		{
-			progval.pack_total = 1;
-			progval.pack_lost = 1;
-		}
-		else
-		{
-			progval.pack_total = seq;
-			progval.ptime_avg = progval.ptime_total / seq;
-			progval.ptime_mdev = sqrtf(fabs(progval.ptime_total_2 / seq - powf(progval.ptime_avg, 2)));
-		}
+		progval.pack_total = seq;
+		progval.ptime_avg = progval.ptime_total / seq;
+		progval.ptime_mdev = sqrtf(fabs(progval.ptime_total_2 / seq - powf(progval.ptime_avg, 2)));
 		if (flags->f_flag)
 		{
 			for (unsigned int j = 0; j < progval.pack_lost; j++)

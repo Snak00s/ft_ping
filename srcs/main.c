@@ -59,7 +59,10 @@ int main(int argc, char **argv)
 	int sockfd = socket(hostaddr[0].sin_family, SOCK_RAW, IPPROTO_ICMP);
 	if (sockfd == -1)
 	{
-		fprintf(stderr, "ft_ping: %s\n", strerror(errno));
+		if (errno == EPERM)
+			fprintf(stderr, "ft_ping: Lacking privilege for icmp socket.\n");
+		else
+			fprintf(stderr, "ft_ping: %s\n", strerror(errno));
 		free_dns_info(host, nbr_dest);
 		return (1);
 	}
