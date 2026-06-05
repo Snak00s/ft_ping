@@ -33,6 +33,7 @@ typedef struct	packet_value {
 	float			ptime_total;
 	float			ptime_total_2;
 	unsigned int	pack_lost;
+	unsigned int	pack_received;
 	unsigned int	pack_total;
 } packet_value;
 

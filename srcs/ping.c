@@ -85,6 +85,8 @@ static icmp_packet *fill_packetconstvalue(int payload_size, char *patern)
 
 static int	print_result(packet_value *progval, char *hostname, int payload_size)
 {
+	if (progval->pack_received + progval->pack_lost != progval->pack_total)
+		progval->pack_lost = progval->pack_total - progval->pack_received;
 	unsigned int rec_packet = progval->pack_total - progval->pack_lost;
 	unsigned int percent_loss = (progval->pack_lost * 100) / progval->pack_total;
 	printf("--- %s ping statistics ---\n%d packets transmitted, %d packets received, %d%% packet loss\n",
@@ -132,15 +134,15 @@ void print_buff(char *buff, int buff_size)
 	printf("\n");
 }
 
-int send_request(int sockfd, icmp_packet *pack, ping_option_value *ping_opt, int io_flag, struct sockaddr_in host_addr, int seq, struct timeval *packet_start)
+int send_request(int sockfd, icmp_packet *pack, ping_option_value *ping_opt, int io_flag, struct sockaddr_in host_addr, int seq, struct timeval *send_time)
 {
 	int pack_size = ping_opt->payload_size + (int)(sizeof(struct icmphdr));
 
 	pack->icmp.un.echo.sequence = htons(seq);
 	pack->icmp.checksum = 0;
-	gettimeofday(packet_start, NULL);
+	gettimeofday(send_time, NULL);
 	if (ping_opt->payload_size >= 16)
-		fill_garbage_timestamp(pack->garbage, packet_start);
+		fill_garbage_timestamp(pack->garbage, send_time);
 	pack->icmp.checksum = checksum(pack, pack_size);
 
 	ssize_t sto = sendto(sockfd, pack, pack_size, io_flag, (const struct sockaddr *)&host_addr, sizeof(host_addr));
@@ -165,7 +167,7 @@ void	wait_time(struct timeval *packet_start)
 
 int ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nbr_dest, ping_option_value *ping_opt, ping_flags *flags, int io_flag)
 {
-	struct timeval	packet_start, packet_end, ping_start, ping_end;
+	struct timeval	send_time, packet_end, ping_start, ping_end;
 	char			buff[ping_opt->payload_size + (int)(sizeof(struct icmphdr)) + (int)(sizeof(struct iphdr))];
 	uint16_t		seq = 0;
 	int				ret = 0;
@@ -195,8 +197,13 @@ int ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nbr
 				gettimeofday(&ping_start, NULL);
 			nbr_packet++;
 
-			if (!send_request(sockfd, pack, ping_opt, io_flag, host_addr[i], seq, &packet_start))
-				return (0);
+			// while (ping_opt->preload != 0)
+			// {
+				if (!send_request(sockfd, pack, ping_opt, io_flag, host_addr[i], seq, &send_time))
+					return (0);
+			// 	ping_opt->preload--;
+			// 	seq++;
+			// }
 
 			fd_set	rec_fd;
 			FD_ZERO(&rec_fd);
@@ -204,12 +211,12 @@ int ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nbr
 			struct timeval timeout = {1, 0};
 
 			int sel = select(sockfd + 1, &rec_fd, 0, 0, &timeout);
-			if (sel == 0)
-			{
-				printf("Request timeout for icmp_seq %d\n", seq - 1);
-				progval.pack_lost++;
-			}
-			else if (sel > 0)
+			// if (sel == 0)
+			// {
+			// 	printf("Request timeout for icmp_seq %d\n", seq - 1);
+			// 	progval.pack_lost++;
+			// }
+			if (sel > 0)
 			{
 				struct sockaddr_in	reply;
 				socklen_t			rlen = sizeof(reply);
@@ -222,31 +229,36 @@ int ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nbr
 				}
 				gettimeofday(&packet_end, NULL);
 
-
-
 				struct icmphdr *icmp_rec = (void *)buff + sizeof(struct iphdr);
 				if (ping_opt->payload_size >= 16)
 				{
-					float packet_time = (packet_end.tv_sec - packet_start.tv_sec) * 1000 + ((packet_end.tv_usec - packet_start.tv_usec) / 1000.0);
-					progval.ptime_total += packet_time;
-					progval.ptime_total_2 += packet_time * packet_time;
-					progval.ptime_max = (packet_time > progval.ptime_max) ? packet_time : progval.ptime_max;
-					progval.ptime_min = (packet_time < progval.ptime_min || progval.ptime_min == 0) ? packet_time : progval.ptime_min;
-					if (!flags->q_flag && !flags->f_flag)
+					struct timeval	*packet_start = (struct timeval *)((void *)buff + sizeof(struct iphdr) + sizeof(struct icmphdr));
+					float packet_time = (packet_end.tv_sec - packet_start->tv_sec) * 1000 + ((packet_end.tv_usec - packet_start->tv_usec) / 1000.0);
+					if ((packet_end.tv_sec - packet_start->tv_sec) + (packet_end.tv_usec - packet_start->tv_usec) / 1000000.0 < ping_opt->timeout.tv_sec)
 					{
-						printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n",
-							(int)(rfm - sizeof(struct iphdr)), host[i].host_addr, htons(icmp_rec->un.echo.sequence),
-							((struct iphdr *)buff)->ttl, packet_time);
+						progval.ptime_total += packet_time;
+						progval.ptime_total_2 += packet_time * packet_time;
+						progval.ptime_max = (packet_time > progval.ptime_max) ? packet_time : progval.ptime_max;
+						progval.ptime_min = (packet_time < progval.ptime_min || progval.ptime_min == 0) ? packet_time : progval.ptime_min;
+						if (!flags->q_flag && !flags->f_flag)
+						{
+							printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n",
+								(int)(rfm - sizeof(struct iphdr)), host[i].host_addr, htons(icmp_rec->un.echo.sequence),
+								((struct iphdr *)buff)->ttl, packet_time);
+						}
+						progval.pack_received++;
 					}
+					else
+						progval.pack_lost++;
 				}
 				else if (!flags->q_flag && !flags->f_flag)
 					printf("%d bytes from %s: icmp_seq=%d ttl=%d\n", (int)(rfm - sizeof(struct iphdr)), host[i].host_addr, htons(icmp_rec->un.echo.sequence), ((struct iphdr *)buff)->ttl);
 			}
-			else
+			else if (sel < 0)
 				if (errno != EINTR)
 					fprintf(stderr, "select error: %s\n", strerror(errno));
 			if (!(flags->f_flag || ping_opt->preload))
-				wait_time(&packet_start);
+				wait_time(&send_time);
 			else if (ping_opt->preload)
 			{
 				ping_opt->preload--;
