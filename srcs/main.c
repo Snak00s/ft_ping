@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 	int nbr_dest = 0;
 	while (destinations[nbr_dest])
 		nbr_dest++;
-	
+
 	struct addrinfo		hints = {
 		.ai_family = AF_UNSPEC,
 		.ai_socktype = SOCK_RAW,
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 		host[i].argv_dest = destinations[i];
 		host[i].ping_started = 0;
 	}
-	
+
 	int sockfd = socket(hostaddr[0].sin_family, SOCK_RAW, IPPROTO_ICMP);
 	if (sockfd == -1)
 	{
