@@ -48,14 +48,13 @@ int main(int argc, char **argv)
 	struct sockaddr_in	hostaddr[nbr_dest];
 	for (int i = 0; i != nbr_dest; i++)
 	{
-		host[i].cannon_name = NULL;
-		host[i].domain_name = NULL;
-		if (!resolve_dns(destinations[i], &hostaddr[i], &host[i], &hints))
+		// host[i].cannon_name = NULL;
+		// host[i].domain_name = NULL;
+		if (!resolve_dns((ft_strncmp(destinations[i], "0.0.0.0", 8) == 0) ? "localhost" : destinations[i], &hostaddr[i], &host[i], &hints))
 			return (2);
 		host[i].argv_dest = destinations[i];
 		host[i].ping_started = 0;
 	}
-
 	int sockfd = socket(hostaddr[0].sin_family, SOCK_RAW, IPPROTO_ICMP);
 	if (sockfd == -1)
 	{
@@ -63,19 +62,18 @@ int main(int argc, char **argv)
 			fprintf(stderr, "ft_ping: Lacking privilege for icmp socket.\n");
 		else
 			fprintf(stderr, "ft_ping: %s\n", strerror(errno));
-		free_dns_info(host, nbr_dest);
+		// free_dns_info(host, nbr_dest);
 		return (1);
 	}
 	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &ping_opt.timeout, sizeof(ping_opt.timeout)) < 0)
 	{
 		fprintf(stderr, "ft_ping: %s\n", strerror(errno));
-		free_dns_info(host, nbr_dest);
+		// free_dns_info(host, nbr_dest);
 		close(sockfd);
 	}
-
 	signal_handler();
 	ret = ping_loop(sockfd, hostaddr, host, nbr_dest, &ping_opt, &flags, (flags.f_flag == 1 || flags.l_flag == 1) ? MSG_DONTWAIT : 0);
-	free_dns_info(host, nbr_dest);
+	// free_dns_info(host, nbr_dest);
 	close(sockfd);
 	return (ret);
 }

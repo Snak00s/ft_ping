@@ -85,8 +85,6 @@ static icmp_packet *fill_packetconstvalue(int payload_size, char *patern)
 
 static int	print_result(packet_value *progval, char *hostname, int payload_size)
 {
-	if (progval->pack_received + progval->pack_lost != progval->pack_total)
-		progval->pack_lost = progval->pack_total - progval->pack_received;
 	unsigned int rec_packet = progval->pack_total - progval->pack_lost;
 	unsigned int percent_loss = (progval->pack_lost * 100) / progval->pack_total;
 	printf("--- %s ping statistics ---\n%d packets transmitted, %d packets received, %d%% packet loss\n",
@@ -224,6 +222,7 @@ int ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nbr
 			if (!nbr_packet)
 				gettimeofday(&ping_start, NULL);
 			nbr_packet++;
+
 			int preload_count = ping_opt->preload;
 			while (ping_opt->preload > 0)
 			{
@@ -308,6 +307,8 @@ int ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nbr
 		progval.pack_total = seq;
 		progval.ptime_avg = progval.ptime_total / seq;
 		progval.ptime_mdev = sqrtf(fabs(progval.ptime_total_2 / seq - powf(progval.ptime_avg, 2)));
+		if (progval.pack_received + progval.pack_lost != progval.pack_total)
+			progval.pack_lost = progval.pack_total - progval.pack_received;
 		if (flags->f_flag)
 		{
 			for (unsigned int j = 0; j < progval.pack_lost; j++)

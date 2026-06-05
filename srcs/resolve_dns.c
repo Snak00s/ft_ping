@@ -45,23 +45,23 @@ int resolve_dns(char *domain_name, struct sockaddr_in *hostaddr, dns_info *host,
 		if (parse_ip(addr))
 		{
 			ft_strlcpy(host->host_addr, addr, ft_strlen(addr) + 1);
-			host->domain_name = ft_strdup(name);
-			if (!host->domain_name)
-				return (0);
-			if (ai->ai_canonname)
-			{
-				host->cannon_name = ft_strdup(ai->ai_canonname);
-				if (!host->cannon_name)
-					return (0);
-			}
+			// host->domain_name = ft_strdup(name);
+			// if (!host->domain_name)
+			// 	return (0);
+			// if (ai->ai_canonname)
+			// {
+			// 	host->cannon_name = ft_strdup(ai->ai_canonname);
+			// 	if (!host->cannon_name)
+			// 		return (0);
+			// }
 			hostaddr->sin_family = ai->ai_family;
 			break;
 		}
 		ai = ai->ai_next;
 	}
 	freeaddrinfo(result);
-	if (!host->domain_name)
-		return (0);
+	// if (!host->domain_name)
+	// 	return (0);
 	hostaddr->sin_port = htons(80);
 	inet_pton(hostaddr->sin_family, host->host_addr, &hostaddr->sin_addr);
 	return (1);

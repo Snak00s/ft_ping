@@ -49,8 +49,8 @@ typedef struct	ping_option_value {
 
 typedef struct	dns_info {
 	char	host_addr[20];
-	char	*cannon_name;
-	char	*domain_name;
+	// char	*cannon_name;
+	// char	*domain_name;
 	char	*argv_dest;
 	int		ping_started;
 } dns_info;
@@ -76,13 +76,10 @@ typedef struct	ping_flags {
 
 int			resolve_dns(char *domain_name, struct sockaddr_in *host_addr, dns_info *host, struct addrinfo *hints);
 int			ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nbr_dest, ping_option_value *ping_opt, ping_flags *flags, int io_flag);
-char		*sock_name(int sock_type);
-char		*af_name(sa_family_t ai_family);
 char		*help();
 char		*wrong_usage();
-void		free_dns_info(dns_info *dns, int nbr_dest);
+// void		free_dns_info(dns_info *dns, int nbr_dest);
 int			parse_ip(char *addr);
 int			parse_args(char **strtab, size_t tabsize, char **dsts, ping_flags *flags, ping_option_value *ping_opt);
-uint64_t	swapLongEndian(uint64_t nbr);
 
 #endif
