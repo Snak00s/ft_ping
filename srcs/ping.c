@@ -222,6 +222,8 @@ int ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nbr
 				}
 				gettimeofday(&packet_end, NULL);
 
+
+
 				struct icmphdr *icmp_rec = (void *)buff + sizeof(struct iphdr);
 				if (ping_opt->payload_size >= 16)
 				{
@@ -246,7 +248,12 @@ int ping_loop(int sockfd, struct sockaddr_in *host_addr, dns_info *host, int nbr
 			if (!(flags->f_flag || ping_opt->preload))
 				wait_time(&packet_start);
 			else if (ping_opt->preload)
+			{
 				ping_opt->preload--;
+				usleep(10000);
+			}
+			else
+				usleep(10000);
 			gettimeofday(&ping_end, NULL);
 			progval.total_time = (ping_end.tv_sec - ping_start.tv_sec) + ((ping_end.tv_usec - ping_start.tv_usec) / 1000000.0);
 			seq++;
